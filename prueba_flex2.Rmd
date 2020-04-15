@@ -30,25 +30,25 @@ selectInput("distribucion", label = "Elegi una distribución:",
 selectInput("funcion", label = "Elegi una función:",
             choices = c("Puntual", "Acumulada"), selected = "Puntual")
 
-conditionalPanel("input.distribucion == 'Bernoulli'", numericInput("proba_exitos_bernoulli", label = "Probabilidad de éxito:", 0.5, min = 0, max = 1, step = 0.1))
+conditionalPanel("input.distribucion == 'Bernoulli'", numericInput("proba_exitos_bernoulli", label = "Probabilidad de Éxito:", 0.5, min = 0, max = 1, step = 0.1))
 
 conditionalPanel("input.distribucion == 'Binomial'", numericInput("intentos", label = "Numero de intentos:", 10, min = 1, max = 20, step = 1))
 
-conditionalPanel("input.distribucion == 'Binomial'", numericInput("proba_exitos", label = "Probabilidad de éxito:", 0.5, min = 0, max = 1, step = 0.1))
+conditionalPanel("input.distribucion == 'Binomial'", numericInput("proba_exitos", label = "Probabilidad de Éxito:", 0.5, min = 0, max = 1, step = 0.1))
 
-#conditionalPanel("input.distribucion == 'Geométrica'", numericInput("primer_exito_Geométrica", label = "Numero de intentos:", 10))
+#conditionalPanel("input.distribucion == 'GeomÉtrica'", numericInput("primer_exito_GeomÉtrica", label = "Numero de intentos:", 10))
 
-conditionalPanel("input.distribucion == 'Geometrica'", numericInput("proba_exitos_Geometrica", label = "Probabilidad de exito:", 0.5, min = 0, max = 1, step = 0.1))
+conditionalPanel("input.distribucion == 'Geometrica'", numericInput("proba_exitos_Geometrica", label = "Probabilidad de exito:", 0.5, min = 0.1, max = 0.9, step = 0.1))
 
-conditionalPanel("input.distribucion == 'Binomial Negativa'", numericInput("p", label = "Probabilidad de exito:", 0.5, min = 0, max = 1, step = 0.1))
+conditionalPanel("input.distribucion == 'Binomial Negativa'", numericInput("p", label = "Probabilidad de exito:", 0.5, min = 0.1, max = 0.9, step = 0.1))
 
 conditionalPanel("input.distribucion == 'Binomial Negativa'", numericInput("r", label = "Cantidad de exitos:", 3, min = 0, max = 6, step = 1))
 
 conditionalPanel("input.distribucion == 'Hipergeometrica'", numericInput("poblacion_hiper", label = "Tamaño de la población:", 10, min = 1, max = 100, step = 1))
 
-conditionalPanel("input.distribucion == 'Hipergeometrica'", numericInput("exitos_hiper", label = "Cantidad de exitos en la población:", 5, min = 1, max = 20, step = 1))
+conditionalPanel("input.distribucion == 'Hipergeometrica'", numericInput("exitos_hiper", label = "Cantidad de exitos en la población (no puede ser mayor a la misma):", 5, min = 1, max = 10, step = 1))
 
-conditionalPanel("input.distribucion == 'Hipergeometrica'", numericInput("muestra_hiper", label = "Tamaño de la muesta que se extrae de  la población:", 5, min = 1, max = 20, step = 1))
+conditionalPanel("input.distribucion == 'Hipergeometrica'", numericInput("muestra_hiper", label = "Tamaño de la muesta que se extrae de  la población (no puede ser mayor a la misma):", 5, min = 1, max = 20, step = 1))
 
 conditionalPanel("input.distribucion == 'Poisson'", numericInput("lambda", label = "Número esperado de eventos por unidad de tiempo(lambda):", 5, min = 1, max = 20, step = 1))
 
@@ -67,7 +67,7 @@ renderPlot({
     data.frame(heads = 0:1, prob = dbinom(x = 0:1, size = 1, prob = as.numeric(input$proba_exitos_bernoulli))) %>%
   #mutate(Heads = ifelse(heads == 2, "2", "other")) %>%
   ggplot(aes(x = factor(heads), y = prob)) +
-  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
+  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
   geom_text(
     aes(label = round(prob,2), y = prob + 0.01),
     position = position_dodge(0.9),
@@ -76,33 +76,58 @@ renderPlot({
   ) +
   labs(title = paste0("Función de probabilidad acumulada de una distribución Bernoulli con p=", input$proba_exitos_bernoulli),
        #subtitle = "(10, .3)",
-       x = "Numero de Éxitos (x)",
+       x = "Numero de éxitos (x)",
        y = "Probabilidad")
   } else if(input$distribucion == "Bernoulli" & input$funcion == "Acumulada"){
     intentos <- 0:1
-  datos <- data.frame(heads = intentos, 
-           cdf = pbinom(q = intentos, size = 1, prob = input$proba_exitos_bernoulli, 
-                        lower.tail = TRUE)) 
-  datos %>%
-  ggplot(aes(x = factor(heads), y = cdf)) +
-  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
-  geom_text(data = subset(datos, cdf>=0.01),
-    aes(label = round(cdf,2), y = cdf + 0.01),
-    position = position_dodge(0.9),
-    size = 3,
-    vjust = 0
-  ) +
-  labs(title = paste0("Función de probabilidad acumulada de una distribución Bernoulli con p=", input$proba_exitos_bernoulli),
-       #subtitle = "Binomial(10, .3)",
-       x = "Numero de Éxitos (x)",
-       y = "Probabilidad Acumulada") 
+    datos <- data.frame(heads = intentos, 
+             cdf = pbinom(q = intentos, size = 1, prob = input$proba_exitos_bernoulli, 
+                          lower.tail = TRUE))
+    datos2 <- data.frame(heads = double(),
+                     ghost_cdf = double(),
+                     grupo = character())
+    datos3 <- data.frame(heads = double(),
+                     ghost_cdf = double(),
+                     grupo = character())
 
+    for(i in 1:(nrow(datos)-1)){
+      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
+      datos2 <- rbind(datos2,vector1, vector2)
+      if(i==1){
+        vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if((nrow(datos)-1)==1){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      } else{
+        vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if(i==(nrow(datos)-1)){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      }
+    }
+    ggplot(datos, aes(x = factor(heads), y = cdf)) +
+      geom_point() +
+      geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
+      geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
+      labs(title =  paste0("Función de probabilidad acumulada de una distribución Bernoulli con p=", input$proba_exitos_bernoulli),
+         #subtitle = paste0("B(",input$intentos,",", input$proba_exitos,")"),
+         x = "Numero de éxitos (x)",
+         y = "Probabilidad Acumulada")
   } else if(input$distribucion == "Binomial" & input$funcion == "Puntual"){
     datos <- data.frame(heads = 0:as.numeric(input$intentos), prob = dbinom(x = 0:as.numeric(input$intentos), size = as.numeric(input$intentos), prob =as.numeric(input$proba_exitos)))
     datos %>%
   #mutate(Heads = ifelse(heads == 2, "2", "other")) %>%
   ggplot(aes(x = factor(heads), y = prob)) +
-  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
+  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
   geom_text(data = subset(datos, prob>=0.01),
     aes(label = round(prob,2), y = prob + 0.01),
     position = position_dodge(0.9),
@@ -115,23 +140,50 @@ renderPlot({
        y = "Probabilidad")
   } else if(input$distribucion == "Binomial" & input$funcion == "Acumulada"){
     intentos <- 0:as.numeric(input$intentos)
-  datos <- data.frame(heads = intentos, 
-           cdf = pbinom(q = intentos, size = (as.numeric(input$intentos)), prob = input$proba_exitos, 
-                        lower.tail = TRUE))
-  datos %>%
-  ggplot(aes(x = factor(heads), y = cdf)) +
-  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
-  geom_text(data=subset(datos, cdf>=0.01),
-    aes(label = round(cdf,2), y = cdf + 0.01),
-    position = position_dodge(0.9),
-    size = 3,
-    vjust = 0
-  ) +
-  labs(title = paste0("Función de probabilidad acumulada de una distribución Binomial con p=", input$proba_exitos, " y N=",input$intentos),
-       subtitle = paste0("B(",input$intentos,",", input$proba_exitos,")"),
-       x = "Éxitos (x)",
-       y = "Probabilidad") 
+    datos <- data.frame(heads = intentos, 
+             cdf = pbinom(q = intentos, size = (as.numeric(input$intentos)), prob = input$proba_exitos, lower.tail = TRUE))
+    datos2 <- data.frame(heads = double(),
+                       ghost_cdf = double(),
+                       grupo = character())
 
+    datos3 <- data.frame(heads = double(),
+                         ghost_cdf = double(),
+                         grupo = character())
+
+    for(i in 1:(nrow(datos)-1)){
+      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
+      datos2 <- rbind(datos2,vector1, vector2)
+      if(i==1){
+        vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if((nrow(datos)-1)==1){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      } else{
+        vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if(i==(nrow(datos)-1)){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      }
+    }
+
+    ggplot(datos, aes(x = factor(heads), y = cdf)) +
+      geom_point() + 
+      geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
+      geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
+      labs(title = paste0("Función de probabilidad acumulada de una distribución Binomial con p=", input$proba_exitos, " y N=",input$intentos),
+         subtitle = paste0("B(",input$intentos,",", input$proba_exitos,")"),
+         x = "éxitos (x)",
+         y = "Probabilidad") 
+    
   } else if (input$distribucion == "Geometrica" & input$funcion == "Puntual"){
     p <- input$proba_exitos_Geometrica
     contador <- 0
@@ -144,7 +196,7 @@ renderPlot({
   datos <- data.frame(x = 1:contador, prob = dgeom(x = 0:(contador-1), prob = input$proba_exitos_Geometrica))
   datos %>%
   ggplot(aes(x = factor(x), y = prob)) +
-  geom_col(fill = wes_palette("Darjeeling1")[sample(1:5,1)]) +
+  geom_col(fill = wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
   geom_text(data = subset(datos, prob >= 0.01),
     aes(label = round(prob,2), y = prob + 0.01),
     position = position_dodge(0.9),
@@ -166,19 +218,47 @@ renderPlot({
     }
     datos <- data.frame(x = 1:contador, 
            cdf = pgeom(q = 0:(contador-1), prob = p, lower.tail = TRUE))
-datos%>%
-    ggplot(aes(x = factor(x), y = cdf)) +
-  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
-  geom_text(data = datos,
-    aes(label = round(cdf,2), y = cdf + 0.01),
-    position = position_dodge(0.9),
-    size = 3,
-    vjust = 0
-  ) +
-  labs(title = "Función de Probabilidad Acumulada.",
-       subtitle = paste0("Geométrica (p=",input$proba_exitos_Geometrica,")"),
-       x = "Primer Éxito en el intento X",
-       y = "Probabilidad Acumulada") 
+    datos2 <- data.frame(heads = double(),
+                       ghost_cdf = double(),
+                       grupo = character())
+
+    datos3 <- data.frame(heads = double(),
+                         ghost_cdf = double(),
+                         grupo = character())
+
+    for(i in 1:(nrow(datos)-1)){
+      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
+      datos2 <- rbind(datos2,vector1, vector2)
+      if(i==1){
+        vector1 <- data.frame(heads = 1,ghost_cdf = 0,grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if((nrow(datos)-1)==1){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      } else{
+        vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if(i==(nrow(datos)-1)){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      }
+    }
+
+    ggplot(datos, aes(x = factor(x), y = cdf)) +
+      geom_point() + 
+      geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
+      geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
+      labs(title = paste0("Función de Probabilidad Acumulada."),
+         subtitle = paste0("Geométrica (p=",input$proba_exitos_Geometrica,")"),
+         x = "Primer éxito en el intento X",
+         y = "Probabilidad Acumulada")
   } else if(input$distribucion=="Binomial Negativa" & input$funcion == "Puntual"){
     k <- as.numeric(input$r)
     probabilidad <- 1
@@ -191,40 +271,81 @@ datos%>%
     k <- k-1
 
     datos <- data.frame(x = as.numeric(input$r):k, prob = vector_probabilidad) 
+    
+    
     datos %>%
       ggplot(aes(x = factor(x), y = prob)) +
-      geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
+      geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
       geom_text(data = subset(datos, prob>=0.01),
         aes(label = round(prob,2), y = prob + 0.01),
         position = position_dodge(0.9),
         size = 3,
         vjust = 0
       ) +
-      labs(title = paste0("Probabilidad de r = ", input$r, " éxitos in X intentos"),
+      labs(title = paste0("Probabilidad de r = ", input$r, " Éxitos in X intentos"),
            subtitle = paste0("BN(", input$r,", ",input$p,")"),
-           x = paste0("Cantidad de Intentos para llegar a r=", input$r, " éxitos"),
+           x = paste0("Cantidad de Intentos para llegar a r=", input$r, " Éxitos"),
           y = "Probabilidad") 
   } else if (input$distribucion=="Binomial Negativa" & input$funcion == "Acumulada"){
-    k <- as.numeric(input$r)
+    p <- input$p
+    r <- input$r
+    k <- r
     probabilidad <- 0
     vector_probabilidad <- c()
     while(probabilidad<=0.99){
-      probabilidad <- choose(k-1,as.numeric(input$r)-1)*(as.numeric(input$p)^as.numeric(input$r))*(1-as.numeric(input$p))^(k-as.numeric(input$r)) + probabilidad
+      probabilidad <- choose(k-1,(r-1))*p^r*(1-p)^(k-r) + probabilidad
       vector_probabilidad <- c(vector_probabilidad, probabilidad)
       k <- k+1
     }
     k <- k-1
-
-    datos <- data.frame(x = as.numeric(input$r):k, prob = vector_probabilidad) 
-    datos %>%
-      ggplot(aes(x = factor(x), y = prob)) +
-      geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
-      geom_text(data = subset(datos, prob>=0.01),
-        aes(label = round(prob,2), y = prob + 0.01),
-        position = position_dodge(0.9),
-        size = 3,
-        vjust = 0
-      ) +
+    
+    datos <- data.frame(x = r:k, prob = vector_probabilidad)
+    vector1 <- data.frame(x = 0,prob = NA)
+    datos <- rbind(vector1, datos)
+    #vector2 <- data.frame(heads = as.numeric(datos[1,1]),ghost_cdf = 0,grupo ="0")
+    datos2 <- data.frame(heads = double(),
+                         ghost_cdf = double(),
+                         grupo = character())
+    
+    datos3 <- data.frame(heads = double(),
+                         ghost_cdf = double(),
+                         grupo = character())
+    #vector1 <- data.frame(heads = 0,ghost_cdf = NA, grupo="0")
+    #datos3 <- rbind(datos3, vector1)
+    
+    
+    vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = "0")
+    vector2 <- data.frame(heads = as.numeric(datos[2,1]),ghost_cdf = 0,grupo ="0")
+    datos2 <- rbind(datos2,vector1, vector2)
+    
+    for(i in 2:(nrow(datos)-1)){
+      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
+      datos2 <- rbind(datos2,vector1, vector2)
+      if(i==2){
+        vector1 <- data.frame(heads = r,ghost_cdf = 0,grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if((nrow(datos)-1)==2){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      } else{
+        vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if(i==(nrow(datos)-1)){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      }
+    }
+    ggplot(datos, aes(x = factor(x), y = prob)) +
+      geom_point() +
+      geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
+      geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
       labs(title = paste0("Probabilidad Acumulada de r = ", input$r, " Exitos en X intentos"),
            subtitle = paste0("BN(", input$r,", ",input$p,")"),
            x = paste0("Cantidad de Intentos para llegar a r=", input$r, " Exitos"),
@@ -234,22 +355,24 @@ datos%>%
 datos <- data.frame(red = 1:as.numeric(input$muestra_hiper), density)
   
 datos %>%  ggplot(aes(x = factor(red), y = density)) +
-  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
+  geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
   geom_text(data = subset(datos, density>=0.01),
     aes(label = round(density,2), y = density + 0.01),
     position = position_dodge(0.9),
     size = 3,
     vjust = 0
   ) +
-  labs(title = "Probabilidad de X éxitos",
+  labs(title = "Probabilidad de X Éxitos",
        subtitle = paste0("Hipergeométrica (m =", input$muestra_hiper,", r = ", input$exitos_hiper, ", n-r =", as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper), ")"),
-       x = "Número de éxitos(x)",
+       x = "Número de Éxitos(x)",
        y = "Densidad")
   } else if (input$distribucion == "Hipergeometrica" & input$funcion == "Acumulada"){
-    poblacion <- input$poblacion_hiper
-    exitos_poblacion <- input$exitos_hiper
-    muestra <- input$muestra_hiper
-
+    if(input$exitos_hiper <= input$poblacion_hiper & input$muestra_hiper <= input$poblacion_hiper){
+      poblacion <- input$poblacion_hiper
+      exitos_poblacion <- input$exitos_hiper
+      muestra <- input$muestra_hiper
+    }
+    
     probabilidad_Hipergeometrica <- function(n, r, m){
       exitos_vector <- 1:m
       vector_probabilidad <- vector("double", length(exitos_vector))
@@ -260,24 +383,55 @@ datos %>%  ggplot(aes(x = factor(red), y = density)) +
       }
       return(round(vector_probabilidad, 2))
     }
-    datos <- data.frame(red = 1:as.numeric(input$muestra_hiper), density =probabilidad_Hipergeometrica(poblacion, exitos_poblacion, muestra))
-
-    datos %>%  ggplot(aes(x = factor(red), y = density)) +
-      geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)]) +
-      geom_text(data = subset(datos, density<=0.999),
-        aes(label = round(density,2), y = density + 0.01),
-        position = position_dodge(0.9),
-        size = 3,
-        vjust = 0
-      ) +
-      labs(title = "Probabilidad Acumulada de X éxitos",
-        subtitle = paste0("Hipergeométrica (m =", input$muestra_hiper,", r = ", input$exitos_hiper, ", n-r =", as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper), ")"),
-        x = "Número de éxitos(x)",
-        y = "Probabilidad Acumulada")
+    datos <- data.frame(red = 1:as.numeric(muestra), density =probabilidad_Hipergeometrica(poblacion, exitos_poblacion, muestra))
+    datos2 <- data.frame(heads = double(),
+                         ghost_cdf = double(),
+                         grupo = character())
+    datos3 <- data.frame(heads = double(),
+                         ghost_cdf = double(),
+                         grupo = character())
+    
+    vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = "0")
+    vector2 <- data.frame(heads = 1,ghost_cdf = 0,grupo ="0")
+    datos2 <- rbind(datos2,vector1, vector2)
+    
+    for(i in 1:(nrow(datos)-1)){
+      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
+      datos2 <- rbind(datos2,vector1, vector2)
+      if(i==1){
+        vector1 <- data.frame(heads = 1,ghost_cdf = 0,grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if((nrow(datos)-1)==1){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      } else{
+        vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+        datos3 <- rbind(datos3, vector1, vector2)
+        if(i==(nrow(datos)-1)){
+          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+          datos3 <- rbind(datos3, vector1, vector2)
+        }
+      }
+    }
+    ggplot(datos, aes(x = factor(red), y = density)) +
+      geom_point() + 
+      geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
+      geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") + 
+      labs(title = "Probabilidad Acumulada de X Éxitos",
+            subtitle = paste0("Hipergeométrica (m =", input$muestra_hiper,", r = ", input$exitos_hiper, ", n-r =", as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper), ")"),
+            x = "Número de Éxitos(x)",
+            y = "Probabilidad Acumulada")
   } else if(input$distribucion=="Poisson" & input$funcion == "Puntual"){
         prob <- 1
         contador <- 11
         lambda <- input$lambda
+        
         while(prob >= 0.01){
            prob <- (lambda^contador)*((exp)(1))^(-lambda)/factorial(contador)
           contador <- contador+1
@@ -287,7 +441,7 @@ density <- dpois(x = events, lambda = input$lambda)
 prob <- ppois(q = events, lambda = input$lambda, lower.tail = TRUE)
 df <- data.frame(events, density, prob)
 ggplot(df, aes(x = factor(events), y = density)) +
-  geom_col(fill = wes_palette("Darjeeling1")[sample(1:5,1)]) +
+  geom_col(fill = wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
   geom_text(data = subset(df, density>=0.01),
     aes(label = round(density,2), y = density + 0.01),
     position = position_dodge(0.9),
@@ -303,25 +457,54 @@ ggplot(df, aes(x = factor(events), y = density)) +
         contador <- 11
         lambda <- input$lambda
         while(prob >= 0.01){
-           prob <- (lambda^contador)*((exp)(1))^(-lambda)/factorial(contador)
+          prob <- (lambda^contador)*((exp)(1))^(-lambda)/factorial(contador)
           contador <- contador+1
-          }
+        }
         events <- 0:contador
-density <- dpois(x = events, lambda = input$lambda)
-prob <- ppois(q = events, lambda = input$lambda, lower.tail = TRUE)
-df <- data.frame(events, density, prob)
-ggplot(df, aes(x = factor(events), y = prob)) +
-  geom_col(fill = wes_palette("Darjeeling1")[sample(1:5,1)]) +
-  geom_text(data = subset(df, prob<=0.999),
-    aes(label = round(prob,3), y = prob + 0.01),
-    position = position_dodge(0.9),
-    size = 3,
-    vjust = 0
-  ) +
-  labs(title = "Función de probabilidad acumulada bajo distribución Poisson ",
-       subtitle = paste0("P(",input$lambda,")."),
-       x = "Eventos (x)",
-       y = "Densidad")
+        prob <- ppois(q = events, lambda = lambda, lower.tail = TRUE)
+        datos <- data.frame(events, prob)
+        
+        datos2 <- data.frame(heads = double(),
+                             ghost_cdf = double(),
+                             grupo = character())
+        
+        datos3 <- data.frame(heads = double(),
+                             ghost_cdf = double(),
+                             grupo = character())
+        
+        for(i in 1:(nrow(datos)-1)){
+          vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
+          datos2 <- rbind(datos2,vector1, vector2)
+          if(i==1){
+            vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = as.character(i))
+            vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+            datos3 <- rbind(datos3, vector1, vector2)
+            if((nrow(datos)-1)==1){
+              vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+              vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+              datos3 <- rbind(datos3, vector1, vector2)
+            }
+          } else{
+            vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+            vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+            datos3 <- rbind(datos3, vector1, vector2)
+            if(i==(nrow(datos)-1)){
+              vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+              vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
+              datos3 <- rbind(datos3, vector1, vector2)
+            }
+          }
+        }
+        
+        ggplot(datos, aes(x = factor(events), y = prob)) +
+          geom_point() + 
+          geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
+          geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
+          labs(title = "Función de probabilidad acumulada bajo distribución Poisson ",
+               subtitle = paste0("P(",input$lambda,")."),
+               x = "Eventos (x)",
+               y = "Densidad")
       }
 })
 
