@@ -115,7 +115,7 @@ renderPlot({
       }
     }
     ggplot(datos, aes(x = factor(heads), y = cdf)) +
-      geom_point() +
+      geom_point(size=3.5) +
       geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
       geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
       labs(title =  paste0("Función de probabilidad acumulada de una distribución Bernoulli con p=", input$proba_exitos_bernoulli),
@@ -176,7 +176,7 @@ renderPlot({
     }
 
     ggplot(datos, aes(x = factor(heads), y = cdf)) +
-      geom_point() + 
+      geom_point(size = 3.5) + 
       geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
       geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
       labs(title = paste0("Función de probabilidad acumulada de una distribución Binomial con p=", input$proba_exitos, " y N=",input$intentos),
@@ -252,7 +252,7 @@ renderPlot({
     }
 
     ggplot(datos, aes(x = factor(x), y = cdf)) +
-      geom_point() + 
+      geom_point(size =3.5) + 
       geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
       geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
       labs(title = paste0("Función de Probabilidad Acumulada."),
@@ -343,7 +343,7 @@ renderPlot({
       }
     }
     ggplot(datos, aes(x = factor(x), y = prob)) +
-      geom_point() +
+      geom_point(size = 3.5) +
       geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
       geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
       labs(title = paste0("Probabilidad Acumulada de r = ", input$r, " Exitos en X intentos"),
@@ -420,7 +420,7 @@ datos %>%  ggplot(aes(x = factor(red), y = density)) +
       }
     }
     ggplot(datos, aes(x = factor(red), y = density)) +
-      geom_point() + 
+      geom_point(size = 3.5) + 
       geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
       geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") + 
       labs(title = "Probabilidad Acumulada de X Éxitos",
@@ -498,7 +498,7 @@ ggplot(df, aes(x = factor(events), y = density)) +
         }
         
         ggplot(datos, aes(x = factor(events), y = prob)) +
-          geom_point() + 
+          geom_point(size = 3.5) + 
           geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
           geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") +
           labs(title = "Función de probabilidad acumulada bajo distribución Poisson ",
