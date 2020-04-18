@@ -351,8 +351,8 @@ renderPlot({
            x = paste0("Cantidad de Intentos para llegar a r=", input$r, " Exitos"),
           y = "Probabilidad")
   } else if(input$distribucion == "Hipergeometrica" & input$funcion == "Puntual"){
-        density = dhyper(x = 1:as.numeric(input$muestra_hiper), m = as.numeric(input$exitos_hiper), n = (as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper)), k = as.numeric(input$muestra_hiper))
-datos <- data.frame(red = 1:as.numeric(input$muestra_hiper), density)
+        density = dhyper(x = 0:as.numeric(input$muestra_hiper), m = as.numeric(input$exitos_hiper), n = (as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper)), k = as.numeric(input$muestra_hiper))
+datos <- data.frame(red = 0:as.numeric(input$muestra_hiper), density)
   
 datos %>%  ggplot(aes(x = factor(red), y = density)) +
   geom_col(fill=wes_palette("Darjeeling1")[sample(1:5,1)], width = 0.1) +
@@ -374,7 +374,7 @@ datos %>%  ggplot(aes(x = factor(red), y = density)) +
     }
     
     probabilidad_Hipergeometrica <- function(n, r, m){
-      exitos_vector <- 1:m
+      exitos_vector <- 0:m
       vector_probabilidad <- vector("double", length(exitos_vector))
       probabilidad <- 0
       for (i in seq_along(exitos_vector)){
@@ -383,50 +383,51 @@ datos %>%  ggplot(aes(x = factor(red), y = density)) +
       }
       return(round(vector_probabilidad, 2))
     }
-    datos <- data.frame(red = 1:as.numeric(muestra), density =probabilidad_Hipergeometrica(poblacion, exitos_poblacion, muestra))
-    datos2 <- data.frame(heads = double(),
-                         ghost_cdf = double(),
-                         grupo = character())
-    datos3 <- data.frame(heads = double(),
-                         ghost_cdf = double(),
-                         grupo = character())
-    
-    vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = "0")
-    vector2 <- data.frame(heads = 1,ghost_cdf = 0,grupo ="0")
+  datos <- data.frame(red = 0:as.numeric(muestra), density =probabilidad_Hipergeometrica(poblacion, exitos_poblacion, muestra))
+  datos2 <- data.frame(heads = double(),
+                       ghost_cdf = double(),
+                       grupo = character())
+  datos3 <- data.frame(heads = double(),
+                       ghost_cdf = double(),
+                       grupo = character())
+
+#vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = "0")
+#vector2 <- data.frame(heads = 1,ghost_cdf = 0,grupo ="0")
+#datos2 <- rbind(datos2,vector1, vector2)
+
+  for(i in 1:(nrow(datos)-1)){
+    vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+    vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
     datos2 <- rbind(datos2,vector1, vector2)
-    
-    for(i in 1:(nrow(datos)-1)){
-      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
-      vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo =as.character(i))
-      datos2 <- rbind(datos2,vector1, vector2)
-      if(i==1){
-        vector1 <- data.frame(heads = 1,ghost_cdf = 0,grupo = as.character(i))
-        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+    if(i==1){
+      vector1 <- data.frame(heads = 0,ghost_cdf = 0,grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      datos3 <- rbind(datos3, vector1, vector2)
+      if((nrow(datos)-1)==1){
+        vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+        vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
         datos3 <- rbind(datos3, vector1, vector2)
-        if((nrow(datos)-1)==1){
-          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
-          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
-          datos3 <- rbind(datos3, vector1, vector2)
-        }
-      } else{
-        vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
-        vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      }
+    } else{
+      vector1 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i-1,2]),grupo = as.character(i))
+      vector2 <- data.frame(heads = as.numeric(datos[i,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i))
+      datos3 <- rbind(datos3, vector1, vector2)
+      if(i==(nrow(datos)-1)){
+        vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
+        vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
         datos3 <- rbind(datos3, vector1, vector2)
-        if(i==(nrow(datos)-1)){
-          vector1 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i,2]),grupo = as.character(i+1))
-          vector2 <- data.frame(heads = as.numeric(datos[i+1,1]),ghost_cdf = as.numeric(datos[i+1,2]),grupo = as.character(i+1))
-          datos3 <- rbind(datos3, vector1, vector2)
-        }
       }
     }
-    ggplot(datos, aes(x = factor(red), y = density)) +
-      geom_point(size = 3.5) + 
-      geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
-      geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") + 
-      labs(title = "Probabilidad Acumulada de X Éxitos",
-            subtitle = paste0("Hipergeométrica (m =", input$muestra_hiper,", r = ", input$exitos_hiper, ", n-r =", as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper), ")"),
-            x = "Número de Éxitos(x)",
-            y = "Probabilidad Acumulada")
+  }
+  ggplot(datos, aes(x = factor(red), y = density)) +
+    geom_point(size = 3.5) + 
+    geom_line(data =datos2, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo))) +
+    geom_line(data =datos3, aes(x=factor(heads), y = ghost_cdf, group=as.factor(grupo)), linetype="dashed") + 
+    labs(title = "Probabilidad Acumulada de X Éxitos",
+         subtitle = paste0("Hipergeométrica (m =", input$muestra_hiper,", r = ", input$exitos_hiper, ", n-r =", as.numeric(input$poblacion_hiper)-as.numeric(input$exitos_hiper), ")"),
+         x = "Número de Éxitos(x)",
+         y = "Probabilidad Acumulada")
+
   } else if(input$distribucion=="Poisson" & input$funcion == "Puntual"){
         prob <- 1
         contador <- 11
